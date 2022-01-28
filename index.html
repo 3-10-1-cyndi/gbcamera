@@ -75,6 +75,12 @@ body {
   <script src="filter.js"></script>
   <script>
 window.onload = function() {
+
+    cameraInit({ exact: "environment" }, true);
+};
+
+function cameraInit(paramFacingMode, IsRecursive)
+{
     var w = window.innerWidth;
     var h = window.innerWidth;
     if(window.innerWidth > window.innerHeight){
@@ -82,21 +88,15 @@ window.onload = function() {
         h = window.innerHeight;
     }
       
-const medias = {
-  audio: false,
-  video: {
-    width:{ min:0, max:w }, 
-    height: { min:0, max:h }, 
-    aspectRatio:w/h,
-
-    facingMode: {
-      exact: "environment" // リアカメラにアクセス
-    }
-    /*
-    facingMode: "user"
-    */
-  }
-};
+    var medias = {
+        audio: false,
+        video: {
+            width:{ min:0, max:w }, 
+            height: { min:0, max:h }, 
+            aspectRatio:w/h,
+            facingMode: paramFacingMode,
+        }
+    };
     const video = document.getElementById("video");
     const canvas = document.querySelector("canvas");
 
@@ -115,9 +115,12 @@ const medias = {
         video.srcObject = stream;
         video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
         video.play();
-        //requestAnimationFrame(tick);
     }).catch(function(err) {
-        alert(err.message);
+        if(IsRecursive){
+            cameraInit("user", false)
+        }else{
+            alert(err);
+        }
     });
 
     promise.then(successCallback)
@@ -129,7 +132,8 @@ const medias = {
     };
 
     function errorCallback(err) {
-        alert(err);
+        //alert(err);
+        return -1;
     };
 
     var app;
@@ -167,6 +171,8 @@ const medias = {
         }, 0);
         
     }
+
+    return 0;
 };
 
     </script>
