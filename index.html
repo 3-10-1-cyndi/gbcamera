@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Video</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
+<style>
+body {
+    text-align: center;
+  margin: 0;
+  background: #000;
+}
+
+#video {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    display: none
+}
+#canvas {
+}
+
+.photo-button {
+  width: 80px;
+  height: 80px;
+  top: 50%;
+  left: 50%;
+  margin-top: 10px;
+  margin-left: -50px;
+  position: relative;
+}
+.circle {
+  position: absolute;
+  top: 12%;
+  left: 12%;
+  bottom: 12%;
+  right: 12%;
+  border-radius: 100%;
+  background-color: #ffffff;
+  opacity: 0;
+}
+.ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  
+  border-radius: 100%;
+  border: 0.5em solid #ffffff;
+  opacity: 0.8;
+}
+.photo-button .circle, .photo-button .ring {
+  transition: all 0.25s;
+}
+.photo-button:hover .circle {
+  opacity: 1;
+}
+.photo-button:active .ring {
+  opacity: 1;
+}
+.photo-button:active .circle {
+  opacity: 0.5;
+}
+
+.footer{
+    margin-top: 50px;
+}
+.footer a{
+    color:#fff;
+}
+
+</style>
+  <script src="pixi.min.js"></script>
+  <script src="filter.js"></script>
+  <script>
+window.onload = function() {
+
+    cameraInit({ exact: "environment" }, true);
+};
+
+function cameraInit(paramFacingMode, IsRecursive)
+{
+    var w = window.innerWidth;
+    var h = window.innerWidth;
+    if(window.innerWidth > window.innerHeight){
+        w = window.innerHeight;
+        h = window.innerHeight;
+    }
+      
+    var medias = {
+        audio: false,
+        video: {
+            width:{ min:0, max:w }, 
+            height: { min:0, max:h }, 
+            aspectRatio:w/h,
+            facingMode: paramFacingMode,
+        }
+    };
+    const video = document.getElementById("video");
+    const canvas = document.querySelector("canvas");
+
+    if (video.srcObject) {
+        video.srcObject.getVideoTracks().forEach(function(camera) { camera.stop(); });
+    }
+
+    const promise = navigator.mediaDevices.getUserMedia(medias).then(function(stream) {
+
+        var settings = stream.getVideoTracks()[0].getSettings();
+        var width = settings.width;
+        var height = settings.height;
+
+        initPIXI(width, height);
+
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+        video.play();
+    }).catch(function(err) {
+        if(IsRecursive){
+            cameraInit("user", false)
+        }else{
+            alert(err);
+        }
+    });
+
+    promise.then(successCallback)
+        .catch(errorCallback);
+
+
+    function successCallback(stream) {
+        //video.srcObject = stream;
+    };
+
+    function errorCallback(err) {
+        //alert(err);
+        return -1;
+    };
+
+    var app;
+    var renderer;
+    function initPIXI(width, height){
+        // アプリケーションを生成する
+        app = new PIXI.Application({
+            view: canvas,
+            width: width,
+            height: height,
+            transparent: true,
+            preserveDrawingBuffer: true
+        });
+        app.stage.interactive = true;
+
+        // videoタグをスプライト化する
+        const videoSprite = PIXI.Sprite.from(video);
+        videoSprite.width = canvas.width;
+        videoSprite.height = canvas.height;
+        // スプライト化したvideoを描画する
+        app.stage.addChild(videoSprite);
+
+        // フィルタを適用
+        let myFilter = new PIXI.filters.MyFilter();
+        app.stage.filters = [myFilter];
+    }
+        
+    document.getElementById("btnPhoto").onclick = (event) => {
+        setTimeout(() => {
+            var imgUrl = app.renderer.view.toDataURL("image/png");
+            var a = document.createElement('a');
+            a.href = imgUrl;
+            a.download = 'photo.png';
+            a.click();
+        }, 0);
+        
+    }
+
+    return 0;
+};
+
+    </script>
+
+</head>
+<body>
+    <div>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div>
+        <div class="photo-button" id="btnPhoto">>
+            <div class="circle"></div>
+            <div class="ring"></div>
+          </div>
+    </div>
+
+    <div class="footer">
+        <a href="https://twitter.com/3_10_1_cyndi" target="_blank">twitter@3_10_1_cyndi</a>
+    </div>
+</body>
+</html>
